@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonia</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #202123;
+            color: #dcdcdc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #3c3f41;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.8em;
+        }
+        label, select, input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+            font-size: 0.9em;
+        }
+        select, input {
+            background-color: #292b2d;
+            color: #ffffff;
+        }
+        button {
+            background: #ffffff;
+            color: #202123;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #f4f4f4;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            background-color: #292b2d;
+            font-size: 0.9em;
+        }
+        th, td {
+            border: 1px solid #3c3f41;
+            text-align: center;
+            padding: 8px;
+        }
+        th {
+            background-color: #ffffff;
+            color: #202123;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            label, select, input, button {
+                font-size: 0.9em;
+                padding: 8px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            table {
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p style="text-align: center; font-size: 0.9em; color: #bbb; margin-bottom: 20px;">Fill in your work details (start time, end time, hourly rate, etc.), click "Calculate", and view your total pay and hours below.</p>
+        <h1><i class="fas fa-clock"></i> Harmonia</h1>
+
+        <button onclick="setToday()" style="background: #ffffff; color: #202123;">Set Today's Date</button>
+        <label>Preset: <span>⚙️</span></label>
+        <select id="preset" onchange="applyPreset()">
+            <option value="custom">Custom</option>
+            <option value="heathrow-weekdays">Heathrow Couriers Weekdays</option>
+            <option value="heathrow-weekends">Heathrow Couriers Weekends</option>
+        </select>
+
+        <label>Month: <span>📅</span></label>
+        <select id="month">
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+        </select>
+
+        <label>Year: <span>📆</span></label>
+        <input type="number" id="year" value="2024">
+
+        <label>Day: <span>🗓️</span></label>
+        <input type="number" id="day">
+
+        <label>Start Time: <span>⏰</span></label>
+        <input type="time" id="start-time">
+
+        <label>End Time: <span>⏱️</span></label>
+        <input type="time" id="end-time">
+
+        <label>Hourly Rate (£): <span>💵</span></label>
+        <input type="number" id="hourly-rate">
+
+        <label>Overtime Rate (£): <span>💰</span></label>
+        <input type="number" id="overtime-rate">
+
+        <button onclick="calculateSalary()">Calculate</button>
+
+        <div id="result"></div>
+
+        <table id="history">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Worked Hours</th>
+                    <th>Overtime</th>
+                    <th>Total Pay (£)</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="totals" style="margin-top: 20px; text-align: center;">
+            <p>Total Worked Hours: <strong><span id="total-worked-hours">0</span></strong> hrs</p>
+            <p>Total Overtime Hours: <strong><span id="total-overtime-hours">0</span></strong> hrs</p>
+            <p>Total Pay: <strong>£<span id="total-pay">0.00</span></strong></p>
+        </div>
+
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <div style="text-align: center; margin-top: 20px;">
+            <button onclick="clearTable()" style="margin-right: 10px;">Clear Table</button>
+            <button onclick="restoreTable()">Return</button>
+        </div>
+    </div>
+
+    <script>
+        const history = JSON.parse(localStorage.getItem('workHistory')) || [];
+
+        function saveHistory() {
+            localStorage.setItem('workHistory', JSON.stringify(history));
+        }
+
+        function applyPreset() {
+            const preset = document.getElementById('preset').value;
+            if (preset === 'heathrow-weekdays') {
+                document.getElementById('hourly-rate').value = 11.5;
+                document.getElementById('overtime-rate').value = 17.25;
+            } else if (preset === 'heathrow-weekends') {
+                document.getElementById('hourly-rate').value = 17.25;
+                document.getElementById('overtime-rate').value = 17.25;
+            } else {
+                document.getElementById('hourly-rate').value = '';
+                document.getElementById('overtime-rate').value = '';
+            }
+        }
+
+        function setToday() {
+            const today = new Date();
+            document.getElementById('year').value = today.getFullYear();
+            document.getElementById('month').value = today.getMonth() + 1;
+            document.getElementById('day').value = today.getDate();
+        }
+
+        function calculateSalary() {
+            const startTime = document.getElementById('start-time').value;
+            const endTime = document.getElementById('end-time').value;
+            const hourlyRate = parseFloat(document.getElementById('hourly-rate').value);
+            const overtimeRate = parseFloat(document.getElementById('overtime-rate').value);
+
+            if (!startTime || !endTime || isNaN(hourlyRate) || isNaN(overtimeRate)) {
+                return alert('Invalid input');
+            }
+
+            const start = new Date(`1970-01-01T${startTime}`);
+            const end = new Date(`1970-01-01T${endTime}`);
+
+            if (end <= start) {
+                return alert('End time must be after start time.');
+            }
+
+            const workedHours = (end - start) / (1000 * 60 * 60);
+            const regularHours = Math.min(workedHours, 8);
+            const overtimeHours = Math.max(0, workedHours - 8);
+            const totalPay = (regularHours * hourlyRate) + (overtimeHours * overtimeRate);
+
+            history.push({
+                day: document.getElementById('day').value,
+                workedHours: workedHours.toFixed(2),
+                overtime: overtimeHours.toFixed(2),
+                totalPay: totalPay.toFixed(2)
+            });
+
+            saveHistory();
+            updateHistory();
+        }
+
+        function updateHistory() {
+            const tbody = document.querySelector('#history tbody');
+            let totalWorked = 0, totalOvertime = 0, totalPay = 0;
+
+            history.sort((a, b) => parseInt(a.day) - parseInt(b.day));
+            tbody.innerHTML = history.map(row => {
+                totalWorked += parseFloat(row.workedHours);
+                totalOvertime += parseFloat(row.overtime);
+                totalPay += parseFloat(row.totalPay);
+                return `
+                    <tr>
+                        <td>${row.day}</td>
+                        <td>${row.workedHours}</td>
+                        <td>${row.overtime}</td>
+                        <td>£${row.totalPay}</td>
+                    </tr>`;
+            }).join('');
+
+            document.getElementById('total-worked-hours').textContent = totalWorked.toFixed(2);
+            document.getElementById('total-overtime-hours').textContent = totalOvertime.toFixed(2);
+            document.getElementById('total-pay').textContent = totalPay.toFixed(2);
+        }
+
+        // Load history on page load
+        updateHistory();
+    </script>
+</body>
+</html>
